@@ -22,16 +22,24 @@ import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kz.project.keyboard.model.Emotion
 import java.util.concurrent.Executors
 
-class CameraViewModel : ViewModel() {
+class EmotionDetectorViewModel : ViewModel() {
+
+    private val _detectedEmotion = MutableStateFlow(Emotion.NEUTRAL)
+    val detectedEmotion: StateFlow<Emotion> = _detectedEmotion.asStateFlow()
 
     private var cameraProvider: ProcessCameraProvider? = null
     private var faceLandmarker: FaceLandmarker? = null
 
     private var backgroundExecutor = Executors.newSingleThreadExecutor()
+    private val emotionDetector = EmotionDetector()
 
     fun setupCamera(
         previewView: PreviewView,
@@ -149,6 +157,9 @@ class CameraViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
+            _detectedEmotion.value = emotionDetector.detectAmotion(result)
+
+
             overlayView.setResults(result, input)
             overlayView.invalidate()
         }
